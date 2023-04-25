@@ -20,6 +20,8 @@ class MainActivity : AppCompatActivity() {
 
     private val fragmentTwo = FragmentTwo()
     private val fragmentOne = FragmentOne()
+
+
     companion object {
 
         var containerOne by mutableStateOf(ViewCompat.generateViewId())
@@ -32,20 +34,22 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+
         setContent {
             Container(savedInstanceState)
         }
     }
-
 
     @Composable
     fun Container(savedInstanceState: Bundle?) {
 
 
                 if(resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
+
                     SetFragmentOne(Modifier.fillMaxSize(), savedInstanceState)
                 }
                 else if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)  {
+
 
                     Row {
 
@@ -106,7 +110,6 @@ class MainActivity : AppCompatActivity() {
                         supportFragmentManager.beginTransaction()
                             .replace(it.id, FragmentOne(), fragmentOneTag).commit()
                     }
-
                 })
 
         }
@@ -118,14 +121,17 @@ class MainActivity : AppCompatActivity() {
 
         if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
 
-
             //When we start from landscape
             val frgA = supportFragmentManager.findFragmentById(frameLayout.id)
             if(frgA == null) {
                 supportFragmentManager.beginTransaction().replace(frameLayout.id, fragmentOne, fragmentOneTag).commit()
             }
 
+            val frgB = supportFragmentManager.findFragmentByTag(FragmentOne.frgBTag)
+            if(frgB  != null) supportFragmentManager.beginTransaction().remove(frgB).commit()
+
             supportFragmentManager.beginTransaction().apply {
+                println("Add frgOne to stack")
                 addToBackStack(fragmentOneTag)
                 replace(frameLayout.id, fragmentTwo, FragmentOne.frgBTag).commit()
             }
@@ -138,20 +144,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onSaveInstanceState(outState: Bundle) {
 
-        val currentFragment = supportFragmentManager.findFragmentById(containerOne)
+        val frgTwo = supportFragmentManager.findFragmentByTag(FragmentOne.frgBTag)
+        outState.putBundle( fragTwoArg, frgTwo?.arguments)
 
-        if(resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE && currentFragment is FragmentTwo) {
-
-            outState.putBundle( fragTwoArg, currentFragment.arguments)
-
-        } else if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT){
-
-            val landContainerTwo = supportFragmentManager.findFragmentById(containerTwo)
-
-            if(landContainerTwo != null) {
-                outState.putBundle(fragTwoArg, landContainerTwo.arguments)
-            }
-        }
         super.onSaveInstanceState(outState)
 
     }

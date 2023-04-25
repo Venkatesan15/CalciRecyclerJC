@@ -121,8 +121,11 @@ class FragmentTwo : Fragment() {
             )
 
             if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
+
                 parentFragmentManager.popBackStack()
+
             } else {
+
                 parentFragmentManager.beginTransaction().remove(this@FragmentTwo).commit()
             }
 

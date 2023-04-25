@@ -39,7 +39,6 @@ class FragmentOne : Fragment() {
         var resetButtonVisible by mutableStateOf(false)
         const val frgBTag = "FragmentB"
         const val action = "Action"
-        var actionPage by mutableStateOf(true)
 
     }
 
@@ -97,7 +96,6 @@ class FragmentOne : Fragment() {
 
             if (resetButtonVisible) {
                 Button(onClick = {
-                    actionPage = true
                     actionOrResItems.clear()
                     addIntoViewsList()
                     resetButtonVisible = false
@@ -126,6 +124,7 @@ class FragmentOne : Fragment() {
 
         if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
 
+            println("Create FrgB port")
             parentFragmentManager.beginTransaction().apply {
                 addToBackStack(MainActivity.fragmentOneTag)
                 replace(MainActivity.containerOne, fragmentTwo, frgBTag).commit()
