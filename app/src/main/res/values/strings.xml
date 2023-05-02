@@ -2,5 +2,16 @@
     <string name="app_name">CalculatorJC</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
-    <string name="title_activity_main2">MainActivity2</string>
+    <string name="title_aczivity_main2">MainActivity2</string>
+    <string name="number_One">Number One</string>
+    <string name="number_Two">Number Two</string>
+
+    <string name="add_btn">Add</string>
+    <string name="sub_btn">Subtract</string>
+    <string name="mul_btn">Multiply</string>
+    <string name="div_btn">Division</string>
+    <string name="reset_btn">Reset</string>
+
+
+    <string name="top_app_bar">CALCULATOR</string>
 </resources>

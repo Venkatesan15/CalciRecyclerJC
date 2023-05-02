@@ -1,6 +1,5 @@
 package com.example.calculatorjc
 
-import android.content.res.Configuration
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -15,25 +14,45 @@ import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import java.lang.Exception
 import java.text.DecimalFormat
 
 
 class FragmentTwo : Fragment() {
 
 
-    companion object {
-        var btnText by mutableStateOf("")
-        var inputOne by mutableStateOf("")
-        var inputTwo by mutableStateOf("")
+    private var btnText by mutableStateOf("")
+    private var inputOne by mutableStateOf("")
+    private var inputTwo by mutableStateOf("")
 
+    companion object {
+        const val inputOneKey = "InputOne"
+        const val inputTwoKey = "InputTwo"
+        const val buttonText = "ButtonText"
+
+    }
+
+    lateinit var callBack: Result
+    interface Result {
+        fun sendResult(result: String)
+    }
+
+    fun setOnResultSender(callBack: Result) {
+        this.callBack = callBack
+    }
+
+    fun updateActionBtnText(text: String) {
+        btnText = text
     }
 
     override fun onCreateView(
@@ -41,15 +60,24 @@ class FragmentTwo : Fragment() {
         savedInstanceState: Bundle?
     ): View {
 
+
+        if (arguments?.getString(inputOneKey) != null) inputOne = requireArguments().getString(
+            inputOneKey
+        )!!
+
+        if (arguments?.getString(inputTwoKey) != null) inputTwo = requireArguments().getString(
+            inputTwoKey
+        )!!
+
         return ComposeView(requireContext()).apply {
             setContent {
-                GetInput()
+                SetContent()
             }
         }
     }
 
     @Composable
-    fun GetInput() {
+    fun SetContent() {
 
         val focusManager = LocalFocusManager.current
 
@@ -59,75 +87,84 @@ class FragmentTwo : Fragment() {
                 .background(Color.Gray),
             verticalArrangement = Arrangement.Center,
         ) {
+            InputOne(
+                Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(bottom = 30.dp))
 
-            TextField(
-                value = inputOne, onValueChange = {
-                    if (!it.contains(',')) {
-                        inputOne = it
-                    }
-                },
-                modifier = Modifier.align(Alignment.CenterHorizontally),
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Number, imeAction = ImeAction.Next
-                ),
-                singleLine = true,
-                label = { Text("Number One") }
-            )
+            InputTwo(modifier = Modifier.align(Alignment.CenterHorizontally), focusManager)
 
-            Spacer(modifier = Modifier.size(30.dp))
+            ActionButton(
+                Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(top = 40.dp), focusManager)
+        }
+    }
 
-            TextField(
-                value = inputTwo,
-                onValueChange = {
-                    if (!it.contains(',')) {
-                        inputTwo = it
-                    }
-                },
-                modifier = Modifier.align(Alignment.CenterHorizontally),
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Number,
-                    imeAction = ImeAction.Done
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = { focusManager.clearFocus() }),
-                singleLine = true,
-                label = { Text("Number Two") },
+    @Composable
+    private fun InputOne(modifier: Modifier) {
 
-                )
-
-            Spacer(modifier = Modifier.size(70.dp))
-
-
-            Button(onClick = {
-                onClick()
-            }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                if (btnText.isEmpty()) {
-                    Text(text = arguments?.getString(FragmentOne.action).toString())
-                } else {
-                    Text(text = btnText)
+        TextField (
+            value = inputOne, onValueChange = {
+                if (!it.contains(',') && !it.contains(' ') && !it.contains('-')) {
+                    inputOne = it
                 }
+            },
+            modifier = modifier,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number, imeAction = ImeAction.Next
+            ),
+            singleLine = true,
+            label = { Text(resources.getString(R.string.number_One)) }
+        )
+    }
+
+    @Composable
+    private fun InputTwo(modifier: Modifier, focusManager: FocusManager) {
+
+        TextField (
+            value = inputTwo,
+            onValueChange = {
+                if (!it.contains(',')) {
+                    inputTwo = it
+                }
+            },
+            modifier = modifier,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number, imeAction = ImeAction.Done
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = { focusManager.clearFocus() }),
+            singleLine = true,
+            label = { Text(resources.getString(R.string.number_Two)) },
+            )
+    }
+
+    @Composable
+    private fun ActionButton(modifier: Modifier, focusManager: FocusManager) {
+
+        Button (onClick = {
+            focusManager.clearFocus()
+            onClick()
+        }, modifier = modifier) {
+            if (arguments?.getString(buttonText) != null) {
+                btnText = arguments?.getString(buttonText)!!
             }
+            Text(text = btnText)
         }
     }
 
     private fun onClick() {
 
-        if (inputOne.trim().isNotEmpty() && inputTwo.trim().isNotEmpty()) {
+        if (inputTwo.trim().isNotEmpty() && inputTwo.trim() == "0" && btnText == "Division") {
+            Toast.makeText(context, "Divided by 0 Always infinite", Toast.LENGTH_SHORT).show()
+        } else if (inputOne.trim().isNotEmpty() && inputTwo.trim().isNotEmpty()) {
 
             generateResult(
                 inputOne,
                 inputTwo,
                 btnText
             )
-
-            if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
-
-                parentFragmentManager.popBackStack()
-
-            } else {
-
-                parentFragmentManager.beginTransaction().remove(this@FragmentTwo).commit()
-            }
 
             inputOne = ""
             inputTwo = ""
@@ -140,24 +177,41 @@ class FragmentTwo : Fragment() {
 
     private fun generateResult(input1: String, input2: String, action: String) {
 
-        val num1 = input1.toFloat()
-        val num2 = input2.toFloat()
+        try {
+            val num1 = input1.toFloat()
+            val num2 = input2.toFloat()
 
-        val ans = when (action) {
-            "Add" -> (num1 + num2)
-            "Subtract" -> (num1 - num2)
-            "Multiply" -> (num1 * num2)
-            "Division" -> (num1 / num2)
-            else -> null!!
+            val ans = when (action) {
+                "Add" -> (num1 + num2)
+                "Subtract" -> (num1 - num2)
+                "Multiply" -> (num1 * num2)
+                "Division" -> (num1 / num2)
+                else -> null!!
+            }
+
+            val format = DecimalFormat("0.#")
+
+            val resultText =
+                "Your Result is ${format.format(ans)} for inputs $input1 and $input2 with action $action"
+
+            callBack.sendResult(resultText)
         }
+        catch (e: Exception) {
+            Toast.makeText(context, "Exception : $e", Toast.LENGTH_SHORT).show()
+        }
+    }
 
-        val format = DecimalFormat("0.#")
 
-        val resultText =
-            "Your Result is ${format.format(ans)} for inputs $input1 and $input2 with action $action"
-        FragmentOne.resetButtonVisible = true
-        FragmentOne.actionOrResItems.clear()
-        FragmentOne.actionOrResItems.add(ActionOrResItem(2, resultText))
+    override fun onPause() {
+        super.onPause()
+        if(inputOne.isNotEmpty()) arguments?.putString(inputOneKey, inputOne)
+
+        if(inputTwo.isNotEmpty()) arguments?.putString(inputTwoKey, inputTwo)
+    }
+
+    fun resetInputs() {
+        inputTwo = ""
+        inputOne = ""
     }
 }
 
