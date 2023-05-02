@@ -37,7 +37,7 @@ class FragmentOne : Fragment() {
 
     private val actionOrResItems = mutableStateListOf<ActionOrResItem>()
 
-    lateinit var callBack: Action
+    private lateinit var callBack: Action
 
     companion object {
         const val frgBTag = "FragmentB"
