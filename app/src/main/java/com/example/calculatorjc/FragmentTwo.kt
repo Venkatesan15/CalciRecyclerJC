@@ -7,20 +7,24 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
+import androidx.compose.material.TextFieldColors
+import androidx.compose.material.TextFieldDefaults
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -71,28 +75,28 @@ class FragmentTwo : Fragment() {
 
         return ComposeView(requireContext()).apply {
             setContent {
-                SetContent()
+                InflateContent()
             }
         }
     }
 
     @Composable
-    fun SetContent() {
+    fun InflateContent() {
 
         val focusManager = LocalFocusManager.current
 
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Gray),
+                .fillMaxSize(),
             verticalArrangement = Arrangement.Center,
         ) {
             InputOne(
                 Modifier
                     .align(Alignment.CenterHorizontally)
-                    .padding(bottom = 30.dp))
+                    .padding(bottom = 30.dp)
+                    )
 
-            InputTwo(modifier = Modifier.align(Alignment.CenterHorizontally), focusManager)
+            InputTwo( modifier = Modifier.align(Alignment.CenterHorizontally), focusManager )
 
             ActionButton(
                 Modifier
@@ -103,6 +107,7 @@ class FragmentTwo : Fragment() {
 
     @Composable
     private fun InputOne(modifier: Modifier) {
+
 
         TextField (
             value = inputOne, onValueChange = {
@@ -115,7 +120,9 @@ class FragmentTwo : Fragment() {
                 keyboardType = KeyboardType.Number, imeAction = ImeAction.Next
             ),
             singleLine = true,
-            label = { Text(resources.getString(R.string.number_One)) }
+            label = { Text(resources.getString(R.string.number_One),  color = MaterialTheme.colors.onPrimary) },
+            colors = TextFieldDefaults.textFieldColors(textColor = MaterialTheme.colors.onPrimary)
+
         )
     }
 
@@ -136,8 +143,11 @@ class FragmentTwo : Fragment() {
             keyboardActions = KeyboardActions(
                 onDone = { focusManager.clearFocus() }),
             singleLine = true,
-            label = { Text(resources.getString(R.string.number_Two)) },
-            )
+            label = { Text(resources.getString(R.string.number_Two), color = MaterialTheme.colors.onPrimary)},
+            colors = TextFieldDefaults.textFieldColors(textColor = MaterialTheme.colors.onPrimary),
+
+
+        )
     }
 
     @Composable
@@ -156,9 +166,9 @@ class FragmentTwo : Fragment() {
 
     private fun onClick() {
 
-        if (inputTwo.trim().isNotEmpty() && inputTwo.trim() == "0" && btnText == "Division") {
+        if (inputTwo == "0" && btnText == "Division") {
             Toast.makeText(context, "Divided by 0 Always infinite", Toast.LENGTH_SHORT).show()
-        } else if (inputOne.trim().isNotEmpty() && inputTwo.trim().isNotEmpty()) {
+        } else if (inputOne.isNotEmpty() && inputTwo.isNotEmpty() && inputOne != "." && inputTwo != ".") {
 
             generateResult(
                 inputOne,
@@ -171,7 +181,7 @@ class FragmentTwo : Fragment() {
             arguments = null
 
         } else {
-            Toast.makeText(context, "Please Enter Input", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Please Enter Valid Input", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -197,7 +207,7 @@ class FragmentTwo : Fragment() {
             callBack.sendResult(resultText)
         }
         catch (e: Exception) {
-            Toast.makeText(context, "Exception : $e", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Something went Wrong", Toast.LENGTH_SHORT).show()
         }
     }
 

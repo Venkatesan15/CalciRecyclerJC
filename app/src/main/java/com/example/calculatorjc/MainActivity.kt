@@ -9,13 +9,19 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Row
 import androidx.compose.ui.Modifier
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.material.Divider
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
@@ -28,6 +34,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentOnAttachListener
+import com.example.calculatorjc.ui.theme.CalculatorJCTheme
 
 
 class MainActivity : AppCompatActivity(), FragmentOne.Action,
@@ -38,10 +45,14 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
     private var containerOne = 0
     private var containerTwo = 1
 
+    var isBackBtnVisible by mutableStateOf(false)
+
     companion object {
         const val fragmentOneTag = "FragmentOne"
+        const val frgBTag = "FragmentB"
         const val fragTwoArg = "fragTwoArg"
         const val fragmentOneArg = "FragmentOneArg"
+        const val isBackBtnVisibleTag ="IsBackBtnVisible"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,20 +65,24 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
         }
         supportFragmentManager.addFragmentOnAttachListener(listener)
 
+        if(savedInstanceState != null && savedInstanceState.getBoolean(isBackBtnVisibleTag)) isBackBtnVisible = true
         setContent {
 
             InitializeContainers(savedInstanceState)
 
-            Scaffold(
-                topBar = { AddTopAppBar() },
-                content = { paddingValues -> SetContent(paddingValues) }
-            )
+            CalculatorJCTheme() {
+                Scaffold(
+                    topBar = { if(isBackBtnVisible) AddTopAppBar() },
+                    content = { paddingValues -> InflateFragments(paddingValues) }
+                )
+            }
+
         }
         super.onCreate(savedInstanceState)
     }
 
     @Composable
-    private fun SetContent(paddingValues: PaddingValues) {
+    private fun InflateFragments(paddingValues: PaddingValues) {
 
         if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
 
@@ -75,6 +90,7 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
+                    .background(MaterialTheme.colors.onBackground)
             ) {
                 LoadInputFragment()
                 LoadActionFragment()
@@ -91,6 +107,7 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
                     modifier = Modifier
                         .width(0.dp)
                         .weight(1f))
+                Divider(modifier = Modifier.fillMaxHeight().width(5.dp), color = MaterialTheme.colors.onPrimary)
 
                 LoadInputFragment( modifier = Modifier.weight(1f) )
             }
@@ -125,7 +142,7 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
                 id = containerTwo
 
                 supportFragmentManager.beginTransaction()
-                    .replace(containerTwo, fragmentTwo, FragmentOne.frgBTag)
+                    .replace(containerTwo, fragmentTwo, frgBTag)
                     .hide(fragmentTwo)
                     .commit()
                 if (fragmentTwo.arguments != null) {
@@ -181,7 +198,7 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
                     id = containerTwo
 
                     supportFragmentManager.beginTransaction()
-                        .add(id, fragmentTwo, FragmentOne.frgBTag)
+                        .add(id, fragmentTwo, frgBTag)
                         .hide(fragmentTwo)
                         .commit()
 
@@ -202,6 +219,8 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
 
         outState.putBundle(fragmentOneArg, fragmentOne.arguments)
         outState.putBundle(fragTwoArg, fragmentTwo.arguments)
+
+        outState.putBoolean(isBackBtnVisibleTag, isBackBtnVisible)
         super.onSaveInstanceState(outState)
 
     }
@@ -209,6 +228,8 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
 
     //This function is used for send the Action(Add, Subtract,..) from FragmentOne to FragmentTwo
     override fun sendActionText(text: String): Boolean {
+
+        isBackBtnVisible = true
 
         val bundle = Bundle()
 
@@ -259,7 +280,10 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
                     Icon(Icons.Default.ArrowBack, "Back")
                 }
             },
-            backgroundColor = Color(0xFF418CC9)
+            contentColor = MaterialTheme.colors.onPrimary,
+
+            backgroundColor = MaterialTheme.colors.onBackground,
+            elevation = 0.dp
         )
 
     }
@@ -276,14 +300,14 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
         }
 
         if (fragmentTwo.arguments != null) {
+            isBackBtnVisible = false
             supportFragmentManager.beginTransaction().hide(fragmentTwo).show(fragmentOne).commit()
             fragmentTwo.resetInputs()
             fragmentTwo.arguments = null
         } else if(fragmentOne.arguments != null) {
+            isBackBtnVisible = false
             fragmentOne.addActionsIntoAdapter()
             fragmentOne.arguments = null
-        } else {
-            finish()
         }
     }
 

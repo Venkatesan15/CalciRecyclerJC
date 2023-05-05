@@ -9,8 +9,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.Button
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -21,7 +23,6 @@ import androidx.fragment.app.Fragment
 
 
 class FragmentOne : Fragment() {
-
 
     private var resultText = ""
 
@@ -40,7 +41,7 @@ class FragmentOne : Fragment() {
     private lateinit var callBack: Action
 
     companion object {
-        const val frgBTag = "FragmentB"
+
         const val resultAvailable = "ResultAvailable"
     }
 
@@ -61,14 +62,8 @@ class FragmentOne : Fragment() {
         initialize()
 
         return ComposeView(requireContext()).apply {
-
-
-            //This function will inflate result(if result available) when orientation change
-            showResult()
-
             setContent {
-                if (actionOrResItems.size == 0) addActionsIntoAdapter()
-                InflateActions()
+                InflateActions(actionOrResItems)
             }
 
         }
@@ -82,9 +77,15 @@ class FragmentOne : Fragment() {
         divObj = ActionOrResItem(buttonItem, resources.getString(R.string.div_btn))
 
         reset = resources.getString(R.string.reset_btn)
+
+        //This function will add result(if result available) and reset button when orientation change
+        addResult()
+
+        if (actionOrResItems.size == 0) addActionsIntoAdapter()
+
     }
 
-    private fun showResult() {
+    private fun addResult() {
 
         if (arguments?.getString(resultAvailable) != null) {
 
@@ -103,12 +104,11 @@ class FragmentOne : Fragment() {
         }
     }
     @Composable
-    fun InflateActions() {
+    fun InflateActions(actionOrResItems: SnapshotStateList<ActionOrResItem>) {
 
         LazyColumn(
             modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Cyan),
+                .fillMaxSize(),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -121,7 +121,8 @@ class FragmentOne : Fragment() {
                     Text(
                         text = actionOrResItems[index].text,
                         fontSize = 30.sp,
-                        modifier = Modifier.padding(20.dp)
+                        modifier = Modifier.padding(20.dp),
+                        color = MaterialTheme.colors.onPrimary
                     )
                 }
             }
@@ -145,6 +146,7 @@ class FragmentOne : Fragment() {
             onClick = {
                 actionText = actionOrResItems[index].text
                 if (actionText == reset) {
+                    (activity as MainActivity).isBackBtnVisible = false
                     resultText = ""
                     arguments = null
                     actionOrResItems.clear()
