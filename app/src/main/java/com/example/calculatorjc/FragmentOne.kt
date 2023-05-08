@@ -5,7 +5,10 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.foundation.background
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.Button
@@ -15,7 +18,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -40,6 +42,7 @@ class FragmentOne : Fragment() {
 
     private lateinit var callBack: Action
 
+
     companion object {
 
         const val resultAvailable = "ResultAvailable"
@@ -52,7 +55,6 @@ class FragmentOne : Fragment() {
     fun setOnActionSender(callBack: Action) {
         this.callBack = callBack
     }
-
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -106,24 +108,45 @@ class FragmentOne : Fragment() {
     @Composable
     fun InflateActions(actionOrResItems: SnapshotStateList<ActionOrResItem>) {
 
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+        var visible by remember {
+            mutableStateOf(false)
+        }
+        LaunchedEffect(key1 = Unit, block = {
+
+                visible = true
+
+        })
+
+        AnimatedVisibility(visible = visible,
+        enter = slideInVertically(
+            tween(
+                durationMillis = 400,
+                easing = FastOutSlowInEasing
+            ),initialOffsetY = {it},
+
+        )
         ) {
 
-            items(actionOrResItems.size) { index ->
 
-                if (actionOrResItems[index].itemType == buttonItem) {
-                    ButtonItem(index = index)
-                } else {
-                    Text(
-                        text = actionOrResItems[index].text,
-                        fontSize = 30.sp,
-                        modifier = Modifier.padding(20.dp),
-                        color = MaterialTheme.colors.onPrimary
-                    )
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+
+                items(actionOrResItems.size) { index ->
+
+                    if (actionOrResItems[index].itemType == buttonItem ) {
+                        ButtonItem(index = index)
+                    } else {
+                        Text(
+                            text = actionOrResItems[index].text,
+                            fontSize = 30.sp,
+                            modifier = Modifier.padding(20.dp),
+                            color = MaterialTheme.colors.onPrimary
+                        )
+                    }
                 }
             }
         }
@@ -146,7 +169,7 @@ class FragmentOne : Fragment() {
             onClick = {
                 actionText = actionOrResItems[index].text
                 if (actionText == reset) {
-                    (activity as MainActivity).isBackBtnVisible = false
+                    (activity as MainActivity).isNavBtnVisible = false
                     resultText = ""
                     arguments = null
                     actionOrResItems.clear()
@@ -179,7 +202,7 @@ class FragmentOne : Fragment() {
         resultText = result
         actionOrResItems.clear()
         actionOrResItems.add(ActionOrResItem(resultItem, result))
-        actionOrResItems.add(ActionOrResItem(buttonItem, reset))
+        actionOrResItems.add(ActionOrResItem(buttonItem, "reset"))
     }
 
 }

@@ -15,9 +15,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material.Divider
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
@@ -28,7 +26,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.ViewCompat
@@ -45,7 +42,7 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
     private var containerOne = 0
     private var containerTwo = 1
 
-    var isBackBtnVisible by mutableStateOf(false)
+    var isNavBtnVisible by mutableStateOf(false)
 
     companion object {
         const val fragmentOneTag = "FragmentOne"
@@ -53,7 +50,12 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
         const val fragTwoArg = "fragTwoArg"
         const val fragmentOneArg = "FragmentOneArg"
         const val isBackBtnVisibleTag ="IsBackBtnVisible"
+
+        const val isFrgBVisibleNow = "IsFrgBVisibleNow"
     }
+
+
+    private var isFrgBVisible by mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -65,14 +67,14 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
         }
         supportFragmentManager.addFragmentOnAttachListener(listener)
 
-        if(savedInstanceState != null && savedInstanceState.getBoolean(isBackBtnVisibleTag)) isBackBtnVisible = true
+        if(savedInstanceState != null && savedInstanceState.getBoolean(isBackBtnVisibleTag)) isNavBtnVisible = true
         setContent {
 
             InitializeContainers(savedInstanceState)
 
             CalculatorJCTheme() {
                 Scaffold(
-                    topBar = { if(isBackBtnVisible) AddTopAppBar() },
+                    topBar = { if(isNavBtnVisible) AddTopAppBar() },
                     content = { paddingValues -> InflateFragments(paddingValues) }
                 )
             }
@@ -92,8 +94,12 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
                     .padding(paddingValues)
                     .background(MaterialTheme.colors.onBackground)
             ) {
-                LoadInputFragment()
-                LoadActionFragment()
+                if(!isFrgBVisible) {
+                    LoadActionFragment()
+                }
+                else {
+                    LoadInputFragment(frgBVisible = isFrgBVisible)
+                }
             }
 
         } else {
@@ -103,13 +109,42 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
                     .fillMaxSize()
                     .padding(paddingValues)
             ) {
-                LoadActionFragment(
-                    modifier = Modifier
-                        .width(0.dp)
-                        .weight(1f))
-                Divider(modifier = Modifier.fillMaxHeight().width(5.dp), color = MaterialTheme.colors.onPrimary)
 
-                LoadInputFragment( modifier = Modifier.weight(1f) )
+                if(!isFrgBVisible) {
+                    LoadActionFragment(
+                        modifier = Modifier
+                            .width(0.dp)
+                            .weight(1f),
+                    )
+
+                    Divider(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .width(5.dp), color = MaterialTheme.colors.onPrimary
+                    )
+
+                    Row(modifier = Modifier.weight(1f)) {}
+                }
+
+                if(isFrgBVisible) {
+                    LoadActionFragment(
+                        modifier = Modifier
+                            .width(0.dp)
+                            .weight(1f),
+                    )
+
+                    Divider(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .width(5.dp), color = MaterialTheme.colors.onPrimary
+                    )
+                    LoadInputFragment(
+                        modifier = Modifier
+                            .weight(1f)
+                            .width(0.dp),
+                        isFrgBVisible
+                    )
+                }
             }
         }
     }
@@ -126,70 +161,22 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
         this.containerOne = containerOne
         this.containerTwo = containerTwo
 
+        val frgB = supportFragmentManager.findFragmentByTag(frgBTag)
+
         if (savedInstanceState?.getBundle(fragTwoArg) != null) {
             fragmentTwo.arguments = savedInstanceState.getBundle(fragTwoArg)
+            frgB?.arguments = savedInstanceState.getBundle(fragTwoArg)
         }
         if (savedInstanceState?.getBundle(fragmentOneArg) != null) {
             fragmentOne.arguments = savedInstanceState.getBundle(fragmentOneArg)
         }
+        if(savedInstanceState != null && savedInstanceState.getBoolean(isFrgBVisibleNow)) {
+            isFrgBVisible = savedInstanceState.getBoolean(isFrgBVisibleNow)
+        }
     }
 
     @Composable
-    private fun LoadInputFragment() {
-        AndroidView(
-            factory = {
-            FrameLayout(it).apply {
-                id = containerTwo
-
-                supportFragmentManager.beginTransaction()
-                    .replace(containerTwo, fragmentTwo, frgBTag)
-                    .hide(fragmentTwo)
-                    .commit()
-                if (fragmentTwo.arguments != null) {
-                    supportFragmentManager.beginTransaction()
-                        .show(fragmentTwo).commit()
-                }
-            }
-        })
-    }
-
-    @Composable
-    private fun LoadActionFragment() {
-        AndroidView(
-            factory = {
-                FrameLayout(it).apply {
-                    id = containerOne
-
-                    supportFragmentManager.beginTransaction()
-                        .replace(containerOne, fragmentOne, fragmentOneTag)
-                        .commit()
-                    if (fragmentTwo.arguments != null) {
-                        supportFragmentManager.beginTransaction().hide(fragmentOne)
-                            .commit()
-
-
-                    }
-                }
-            },
-        )
-    }
-
-    @Composable
-    private fun LoadActionFragment(modifier: Modifier) {
-        AndroidView(
-            factory = {
-                FrameLayout(it).apply {
-                    id = containerOne
-
-                    supportFragmentManager.beginTransaction()
-                        .replace(id, fragmentOne, fragmentOneTag).commit()
-
-                }
-            }, modifier = modifier
-        )
-    }
-    @Composable
-    private fun LoadInputFragment(modifier: Modifier) {
+    private fun LoadInputFragment(modifier: Modifier = Modifier, frgBVisible: Boolean) {
 
         AndroidView(
             factory = {
@@ -197,30 +184,72 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
                 FrameLayout(it).apply {
                     id = containerTwo
 
-                    supportFragmentManager.beginTransaction()
-                        .add(id, fragmentTwo, frgBTag)
-                        .hide(fragmentTwo)
-                        .commit()
+                    if(frgBVisible) {
 
-                    if (fragmentTwo.arguments != null) {
+                        val frgB = supportFragmentManager.findFragmentByTag(frgBTag)
+                        if (frgB != null) {
 
-                        supportFragmentManager.beginTransaction().show(fragmentTwo)
-                            .commit()
+                            val frg = FragmentTwo()
+                            if(fragmentTwo.arguments != null) frg.arguments = fragmentTwo.arguments
+                            else frg.arguments = frgB.arguments
+                            supportFragmentManager.beginTransaction()
+                                .replace(containerTwo, frg, frgBTag)
+                                .commit()
+                        } else {
 
+                            supportFragmentManager.beginTransaction()
+                                .replace(containerTwo, fragmentTwo, frgBTag)
+                                .commit()
+                        }
                     }
                 }
+            }, modifier = modifier)
 
-            }, modifier = modifier
+    }
+
+    @Composable
+    private fun LoadActionFragment(modifier: Modifier = Modifier) {
+
+        AndroidView(
+            factory = {
+                FrameLayout(it).apply {
+                    id = containerOne
+                    supportFragmentManager.beginTransaction()
+                        .replace(containerOne, fragmentOne, fragmentOneTag)
+                        .commit()
+
+                    val frg: Fragment? = supportFragmentManager.findFragmentByTag(fragmentOneTag)
+
+                    if(frg != null) {
+
+                        val rep = FragmentOne()
+                        rep.arguments = frg.arguments
+                        supportFragmentManager.beginTransaction()
+                            .replace(containerOne, rep, fragmentOneTag)
+                            .commit()
+                    } else {
+                        supportFragmentManager.beginTransaction()
+                            .replace(containerOne, fragmentOne, fragmentOneTag)
+                            .commit()
+                    }
+                }
+            }, modifier = modifier,
         )
     }
 
 
+
     override fun onSaveInstanceState(outState: Bundle) {
 
-        outState.putBundle(fragmentOneArg, fragmentOne.arguments)
-        outState.putBundle(fragTwoArg, fragmentTwo.arguments)
+        val frgA = supportFragmentManager.findFragmentByTag(fragmentOneTag)
+        val frgB = supportFragmentManager.findFragmentByTag(frgBTag)
 
-        outState.putBoolean(isBackBtnVisibleTag, isBackBtnVisible)
+        if (frgA != null ) outState.putBundle(fragmentOneArg, frgA.arguments)
+        if (frgB != null) {
+            outState.putBundle(fragTwoArg, frgB.arguments)}
+
+        outState.putBoolean(isBackBtnVisibleTag, isNavBtnVisible)
+        outState.putBoolean(isFrgBVisibleNow, isFrgBVisible)
         super.onSaveInstanceState(outState)
 
     }
@@ -229,18 +258,23 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
     //This function is used for send the Action(Add, Subtract,..) from FragmentOne to FragmentTwo
     override fun sendActionText(text: String): Boolean {
 
-        isBackBtnVisible = true
+        isNavBtnVisible = true
+        isFrgBVisible = true
 
         val bundle = Bundle()
 
         bundle.putString(FragmentTwo.buttonText, text)
 
-        fragmentTwo.arguments = bundle
+       fragmentTwo.arguments = bundle
 
-        supportFragmentManager.beginTransaction().show(fragmentTwo).commit()
-        if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
-            supportFragmentManager.beginTransaction().hide(fragmentOne).commit()
+        val frgB = supportFragmentManager.findFragmentByTag(frgBTag)
+
+        if(frgB != null) {
+            frgB.arguments = bundle
+            (frgB as FragmentTwo).updateActionBtnText(text)
+
         }
+
         fragmentTwo.updateActionBtnText(text)
 
         return false
@@ -249,10 +283,17 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
     //This function is used for get Result from FragmentTwo and send it to FragmentOne
     override fun sendResult(result: String) {
 
-        fragmentOne.arguments = Bundle()
+        isFrgBVisible = false
+
+        val bundle = Bundle()
+        bundle.putString(FragmentOne.resultAvailable, result)
+        //fragmentOne.arguments = bundle
+
+        val frgA = supportFragmentManager.findFragmentByTag(fragmentOneTag)
+        if(frgA != null) frgA.arguments = bundle
         fragmentTwo.arguments = null
         fragmentOne.addResultIntoAdapter(result)
-        supportFragmentManager.beginTransaction().hide(fragmentTwo).show(fragmentOne).commit()
+//        supportFragmentManager.beginTransaction().hide(fragmentTwo).show(fragmentOne).commit()
 
     }
 
@@ -299,25 +340,37 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
             }
         }
 
-        if (fragmentTwo.arguments != null) {
-            isBackBtnVisible = false
-            supportFragmentManager.beginTransaction().hide(fragmentTwo).show(fragmentOne).commit()
-            fragmentTwo.resetInputs()
-            fragmentTwo.arguments = null
-        } else if(fragmentOne.arguments != null) {
-            isBackBtnVisible = false
-            fragmentOne.addActionsIntoAdapter()
-            fragmentOne.arguments = null
+        if (isFrgBVisible) {
+            isNavBtnVisible = false
+
+            val frgB = supportFragmentManager.findFragmentByTag(frgBTag)
+            (frgB as FragmentTwo).resetInputs()
+            isFrgBVisible = false
+            frgB.arguments = null
+
+        } else  {
+
+            val frgA = supportFragmentManager.findFragmentByTag(fragmentOneTag)
+            if(frgA != null) {
+                isNavBtnVisible = false
+                (frgA as FragmentOne).addActionsIntoAdapter()
+                frgA.arguments = null
+            }
         }
     }
 
 
     override fun onBackPressed() {
 
-        if (fragmentTwo.arguments != null) {
-            supportFragmentManager.beginTransaction().hide(fragmentTwo).show(fragmentOne).commit()
-            fragmentTwo.resetInputs()
-            fragmentTwo.arguments = null
+        val frgB = supportFragmentManager.findFragmentByTag(frgBTag)
+        val frgA = supportFragmentManager.findFragmentByTag(fragmentOneTag)
+
+        if(frgA?.arguments == null) isNavBtnVisible = false
+        if (isFrgBVisible) {
+//            supportFragmentManager.beginTransaction().hide(fragmentTwo).show(fragmentOne).commit()
+            (frgB as FragmentTwo).resetInputs()
+            isFrgBVisible = false
+            frgB.arguments = null
         } else super.onBackPressed()
     }
 }

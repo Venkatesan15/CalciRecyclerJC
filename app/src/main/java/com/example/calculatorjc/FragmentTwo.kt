@@ -5,8 +5,17 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.TranslateAnimation
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
@@ -18,6 +27,7 @@ import androidx.compose.material.TextField
 import androidx.compose.material.TextFieldColors
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
@@ -28,6 +38,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.calculatorjc.FragmentTwo.Companion.buttonText
+import com.example.calculatorjc.FragmentTwo.Companion.inputOneKey
+import com.example.calculatorjc.FragmentTwo.Companion.inputTwoKey
+import kotlinx.coroutines.delay
 import java.lang.Exception
 import java.text.DecimalFormat
 
@@ -38,6 +52,9 @@ class FragmentTwo : Fragment() {
     private var btnText by mutableStateOf("")
     private var inputOne by mutableStateOf("")
     private var inputTwo by mutableStateOf("")
+
+    var state by
+        mutableStateOf(false)
 
     companion object {
         const val inputOneKey = "InputOne"
@@ -64,7 +81,6 @@ class FragmentTwo : Fragment() {
         savedInstanceState: Bundle?
     ): View {
 
-
         if (arguments?.getString(inputOneKey) != null) inputOne = requireArguments().getString(
             inputOneKey
         )!!
@@ -73,36 +89,60 @@ class FragmentTwo : Fragment() {
             inputTwoKey
         )!!
 
-        return ComposeView(requireContext()).apply {
+        val view = ComposeView(requireContext())
+        return view.apply {
             setContent {
                 InflateContent()
             }
         }
     }
 
+
     @Composable
     fun InflateContent() {
 
         val focusManager = LocalFocusManager.current
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-        ) {
-            InputOne(
-                Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(bottom = 30.dp)
-                    )
-
-            InputTwo( modifier = Modifier.align(Alignment.CenterHorizontally), focusManager )
-
-            ActionButton(
-                Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(top = 40.dp), focusManager)
+        var visible by rememberSaveable {
+            mutableStateOf(false)
         }
+
+
+        LaunchedEffect( key1 = state, block = {
+            visible = true
+        } )
+
+        AnimatedVisibility(visible = visible,
+            enter = slideInHorizontally(
+            tween(
+            durationMillis = 400,
+
+            easing = FastOutSlowInEasing
+        ), initialOffsetX = {it})
+        ) {
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .animateContentSize(),
+                verticalArrangement = Arrangement.Center,
+            ) {
+                InputOne(
+                    Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(bottom = 30.dp)
+                )
+
+                InputTwo(modifier = Modifier.align(Alignment.CenterHorizontally), focusManager)
+
+                ActionButton(
+                    Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(top = 40.dp), focusManager
+                )
+            }
+        }
+
     }
 
     @Composable
