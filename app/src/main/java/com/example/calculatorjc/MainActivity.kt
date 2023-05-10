@@ -76,7 +76,7 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
 
             InitializeContainers(savedInstanceState)
 
-            CalculatorJCTheme() {
+            CalculatorJCTheme {
                 Scaffold(
                     topBar = { if (isNavBtnVisible) AddTopAppBar() },
                     content = { paddingValues -> InflateFragments(paddingValues) }
@@ -101,7 +101,7 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
                 LoadActionFragment()
 
                 if (isFrgBVisible) {
-                    LoadInputFragment(frgBVisible = isFrgBVisible)
+                    LoadInputFragment()
                 }
             }
 
@@ -133,8 +133,7 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
                     LoadInputFragment(
                         modifier = Modifier
                             .weight(1f)
-                            .width(0.dp),
-                        isFrgBVisible
+                            .width(0.dp)
                     )
                 }
             }
@@ -193,7 +192,7 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
     }
 
     @Composable
-    private fun LoadInputFragment(modifier: Modifier = Modifier, frgBVisible: Boolean) {
+    private fun LoadInputFragment(modifier: Modifier = Modifier) {
 
         AndroidView(
             factory = {
