@@ -65,5 +65,7 @@ dependencies {
     debugImplementation "androidx.compose.ui:ui-test-manifest:$compose_ui_version"
 
     implementation("androidx.fragment:fragment-ktx:1.5.6")
+//    implementation "ui"
+
 
 }

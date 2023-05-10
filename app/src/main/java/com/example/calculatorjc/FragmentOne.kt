@@ -6,9 +6,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.Button
@@ -19,9 +21,12 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.fragment.app.Fragment
+import com.example.calculatorjc.ui.theme.black
+import com.example.calculatorjc.ui.theme.pink
 
 
 class FragmentOne : Fragment() {
@@ -64,6 +69,7 @@ class FragmentOne : Fragment() {
         initialize()
 
         return ComposeView(requireContext()).apply {
+
             setContent {
                 InflateActions(actionOrResItems)
             }
@@ -73,14 +79,14 @@ class FragmentOne : Fragment() {
 
     private fun initialize() {
 
-        addObj = ActionOrResItem(buttonItem, resources.getString(R.string.add_btn))
-        subObj = ActionOrResItem(buttonItem, resources.getString(R.string.sub_btn))
-        mulObj = ActionOrResItem(buttonItem, resources.getString(R.string.mul_btn))
-        divObj = ActionOrResItem(buttonItem, resources.getString(R.string.div_btn))
+        addObj = ActionOrResItem(buttonItem, ResourcesClass.addBtn)
+        subObj = ActionOrResItem(buttonItem, ResourcesClass.subtractBtn)
+        mulObj = ActionOrResItem(buttonItem, ResourcesClass.multiply)
+        divObj = ActionOrResItem(buttonItem, ResourcesClass.division)
 
-        reset = resources.getString(R.string.reset_btn)
+        reset = ResourcesClass.reset
 
-        //This function will add result(if result available) and reset button when orientation change
+        //This function will add result(if result available) and reset button into the adapter when orientation change
         addResult()
 
         if (actionOrResItems.size == 0) addActionsIntoAdapter()
@@ -100,50 +106,50 @@ class FragmentOne : Fragment() {
             actionOrResItems.add(
                 ActionOrResItem(
                     buttonItem,
-                    resources.getString(R.string.reset_btn)
+                    ResourcesClass.reset
                 )
             )
         }
     }
+    @OptIn(ExperimentalFoundationApi::class)
     @Composable
     fun InflateActions(actionOrResItems: SnapshotStateList<ActionOrResItem>) {
+
+        val isDarkTheme = isSystemInDarkTheme()
+        val backGround = if(isDarkTheme) black else pink
 
         var visible by remember {
             mutableStateOf(false)
         }
-        LaunchedEffect(key1 = Unit, block = {
-
-                visible = true
-
+        LaunchedEffect (key1 = Unit, block = {
+            visible = true
         })
 
         AnimatedVisibility(visible = visible,
         enter = slideInVertically(
             tween(
                 durationMillis = 400,
-                easing = FastOutSlowInEasing
             ),initialOffsetY = {it},
 
         )
         ) {
 
-
             LazyColumn(
                 modifier = Modifier
-                    .fillMaxSize(),
+                    .fillMaxSize().background(backGround),
                 verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
 
-                items(actionOrResItems.size) { index ->
+                items(actionOrResItems.size, key = {it}) { index ->
 
                     if (actionOrResItems[index].itemType == buttonItem ) {
-                        ButtonItem(index = index)
+                        ButtonItem(index = index, Modifier.width(100.dp).animateItemPlacement())
                     } else {
                         Text(
                             text = actionOrResItems[index].text,
                             fontSize = 30.sp,
-                            modifier = Modifier.padding(20.dp),
+                            modifier = Modifier.padding(20.dp).animateItemPlacement(),
                             color = MaterialTheme.colors.onPrimary
                         )
                     }
@@ -154,7 +160,7 @@ class FragmentOne : Fragment() {
 
 
     @Composable
-    private fun ButtonItem(index: Int) {
+    private fun ButtonItem(index: Int, modifier: Modifier) {
 
         var onClick by remember {
             mutableStateOf(false)
@@ -165,7 +171,7 @@ class FragmentOne : Fragment() {
 
         if (onClick) onClick = callBack.sendActionText(actionText)
 
-        Button(modifier = Modifier.width(100.dp),
+        Button(modifier = modifier,
             onClick = {
                 actionText = actionOrResItems[index].text
                 if (actionText == reset) {
@@ -202,7 +208,7 @@ class FragmentOne : Fragment() {
         resultText = result
         actionOrResItems.clear()
         actionOrResItems.add(ActionOrResItem(resultItem, result))
-        actionOrResItems.add(ActionOrResItem(buttonItem, "reset"))
+        actionOrResItems.add(ActionOrResItem(buttonItem, ResourcesClass.reset))
     }
 
 }

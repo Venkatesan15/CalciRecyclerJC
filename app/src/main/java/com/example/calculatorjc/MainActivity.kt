@@ -5,15 +5,18 @@ import android.content.res.Configuration
 import android.os.Bundle
 import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
+import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Row
 import androidx.compose.ui.Modifier
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.Divider
@@ -21,17 +24,21 @@ import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
+import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentOnAttachListener
 import com.example.calculatorjc.ui.theme.CalculatorJCTheme
+import com.example.calculatorjc.ui.theme.black
+import com.example.calculatorjc.ui.theme.white
 
 
 class MainActivity : AppCompatActivity(), FragmentOne.Action,
@@ -59,9 +66,6 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
-        if (!this::fragmentOne.isInitialized) fragmentOne = FragmentOne()
-        if (!this::fragmentTwo.isInitialized) fragmentTwo = FragmentTwo()
-
         val listener = FragmentOnAttachListener { _, fragment ->
             onAttachFragments(fragment = fragment)
         }
@@ -74,7 +78,7 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
 
             CalculatorJCTheme() {
                 Scaffold(
-                    topBar = { if(isNavBtnVisible) AddTopAppBar() },
+                    topBar = { if (isNavBtnVisible) AddTopAppBar() },
                     content = { paddingValues -> InflateFragments(paddingValues) }
                 )
             }
@@ -92,12 +96,11 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .background(MaterialTheme.colors.onBackground)
             ) {
-                if(!isFrgBVisible) {
-                    LoadActionFragment()
-                }
-                else {
+
+                LoadActionFragment()
+
+                if (isFrgBVisible) {
                     LoadInputFragment(frgBVisible = isFrgBVisible)
                 }
             }
@@ -110,34 +113,23 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
                     .padding(paddingValues)
             ) {
 
-                if(!isFrgBVisible) {
-                    LoadActionFragment(
-                        modifier = Modifier
-                            .width(0.dp)
-                            .weight(1f),
-                    )
+                LoadActionFragment(
+                    modifier = Modifier
+                        .width(0.dp)
+                        .weight(1f),
+                )
 
-                    Divider(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .width(5.dp), color = MaterialTheme.colors.onPrimary
-                    )
+                Divider(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .width(5.dp), color = MaterialTheme.colors.onPrimary
+                )
 
+                if (!isFrgBVisible) {
                     Row(modifier = Modifier.weight(1f)) {}
                 }
 
-                if(isFrgBVisible) {
-                    LoadActionFragment(
-                        modifier = Modifier
-                            .width(0.dp)
-                            .weight(1f),
-                    )
-
-                    Divider(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .width(5.dp), color = MaterialTheme.colors.onPrimary
-                    )
+                if (isFrgBVisible) {
                     LoadInputFragment(
                         modifier = Modifier
                             .weight(1f)
@@ -162,17 +154,42 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
         this.containerTwo = containerTwo
 
         val frgB = supportFragmentManager.findFragmentByTag(frgBTag)
+        val frgA = supportFragmentManager.findFragmentByTag(fragmentOneTag)
 
         if (savedInstanceState?.getBundle(fragTwoArg) != null) {
-            fragmentTwo.arguments = savedInstanceState.getBundle(fragTwoArg)
             frgB?.arguments = savedInstanceState.getBundle(fragTwoArg)
         }
         if (savedInstanceState?.getBundle(fragmentOneArg) != null) {
-            fragmentOne.arguments = savedInstanceState.getBundle(fragmentOneArg)
+            frgA?.arguments = savedInstanceState.getBundle(fragmentOneArg)
         }
+
         if(savedInstanceState != null && savedInstanceState.getBoolean(isFrgBVisibleNow)) {
             isFrgBVisible = savedInstanceState.getBoolean(isFrgBVisibleNow)
         }
+    }
+
+    @Composable
+    private fun LoadActionFragment(modifier: Modifier = Modifier) {
+
+        AndroidView(
+            factory = {
+                FrameLayout(it).apply {
+                    id = containerOne
+
+                    fragmentOne = FragmentOne()
+
+                    val frg: Fragment? = supportFragmentManager.findFragmentByTag(fragmentOneTag)
+
+                    if (frg != null)
+                        fragmentOne.arguments = frg.arguments
+
+                    supportFragmentManager.beginTransaction()
+                        .replace(containerOne, fragmentOne, fragmentOneTag)
+                        .commit()
+                }
+            },
+            modifier = modifier,
+        )
     }
 
     @Composable
@@ -184,59 +201,23 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
                 FrameLayout(it).apply {
                     id = containerTwo
 
-                    if(frgBVisible) {
+                    val fragmentTwoNew = FragmentTwo()
 
-                        val frgB = supportFragmentManager.findFragmentByTag(frgBTag)
-                        if (frgB != null) {
 
-                            val frg = FragmentTwo()
-                            if(fragmentTwo.arguments != null) frg.arguments = fragmentTwo.arguments
-                            else frg.arguments = frgB.arguments
-                            supportFragmentManager.beginTransaction()
-                                .replace(containerTwo, frg, frgBTag)
-                                .commit()
-                        } else {
+                    val frgB = supportFragmentManager.findFragmentByTag(frgBTag)
 
-                            supportFragmentManager.beginTransaction()
-                                .replace(containerTwo, fragmentTwo, frgBTag)
-                                .commit()
-                        }
-                    }
-                }
-            }, modifier = modifier)
+                    if (frgB?.arguments != null)
+                        fragmentTwoNew.arguments = frgB.arguments
+                    else fragmentTwoNew.arguments = fragmentTwo.arguments
 
-    }
-
-    @Composable
-    private fun LoadActionFragment(modifier: Modifier = Modifier) {
-
-        AndroidView(
-            factory = {
-                FrameLayout(it).apply {
-                    id = containerOne
                     supportFragmentManager.beginTransaction()
-                        .replace(containerOne, fragmentOne, fragmentOneTag)
+                        .replace(containerTwo, fragmentTwoNew, frgBTag)
                         .commit()
-
-                    val frg: Fragment? = supportFragmentManager.findFragmentByTag(fragmentOneTag)
-
-                    if(frg != null) {
-
-                        val rep = FragmentOne()
-                        rep.arguments = frg.arguments
-                        supportFragmentManager.beginTransaction()
-                            .replace(containerOne, rep, fragmentOneTag)
-                            .commit()
-                    } else {
-                        supportFragmentManager.beginTransaction()
-                            .replace(containerOne, fragmentOne, fragmentOneTag)
-                            .commit()
-                    }
                 }
-            }, modifier = modifier,
+            }, modifier = modifier
         )
-    }
 
+    }
 
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -251,7 +232,6 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
         outState.putBoolean(isBackBtnVisibleTag, isNavBtnVisible)
         outState.putBoolean(isFrgBVisibleNow, isFrgBVisible)
         super.onSaveInstanceState(outState)
-
     }
 
 
@@ -265,17 +245,19 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
 
         bundle.putString(FragmentTwo.buttonText, text)
 
-       fragmentTwo.arguments = bundle
 
         val frgB = supportFragmentManager.findFragmentByTag(frgBTag)
 
-        if(frgB != null) {
+        if (frgB != null) {
             frgB.arguments = bundle
             (frgB as FragmentTwo).updateActionBtnText(text)
 
+        } else {
+            fragmentTwo = FragmentTwo()
+            fragmentTwo.arguments = bundle
+            fragmentTwo.updateActionBtnText(text)
         }
 
-        fragmentTwo.updateActionBtnText(text)
 
         return false
     }
@@ -283,24 +265,24 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
     //This function is used for get Result from FragmentTwo and send it to FragmentOne
     override fun sendResult(result: String) {
 
-        isFrgBVisible = false
-
         val bundle = Bundle()
         bundle.putString(FragmentOne.resultAvailable, result)
-        //fragmentOne.arguments = bundle
 
         val frgA = supportFragmentManager.findFragmentByTag(fragmentOneTag)
-        if(frgA != null) frgA.arguments = bundle
-        fragmentTwo.arguments = null
-        fragmentOne.addResultIntoAdapter(result)
-//        supportFragmentManager.beginTransaction().hide(fragmentTwo).show(fragmentOne).commit()
+        if (frgA != null) {
+            frgA.arguments = bundle
+            (frgA as FragmentOne).addResultIntoAdapter(result)
+
+        }
+
+        isFrgBVisible = false
 
     }
 
     private fun onAttachFragments(fragment: Fragment) {
-        if(fragment is FragmentOne) {
+        if (fragment is FragmentOne) {
             fragment.setOnActionSender(this)
-        } else if(fragment is FragmentTwo) {
+        } else if (fragment is FragmentTwo) {
             fragment.setOnResultSender(this)
         }
     }
@@ -310,8 +292,10 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
     @Composable
     fun AddTopAppBar() {
 
+        val tintColor = if(isSystemInDarkTheme()) white else black
         TopAppBar(
             title = {
+                    Text(text = "Calculator", modifier = Modifier.fillMaxWidth())
          },
 
             navigationIcon = {
@@ -323,8 +307,13 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
             },
             contentColor = MaterialTheme.colors.onPrimary,
 
-            backgroundColor = MaterialTheme.colors.onBackground,
-            elevation = 0.dp
+            backgroundColor = MaterialTheme.colors.secondaryVariant,
+            elevation = 0.dp,
+            actions = {
+                Icon(painter = painterResource(id = R.drawable.ic_launcher_foreground), contentDescription = "Logo", tint = tintColor, modifier = Modifier.clickable {
+                    Toast.makeText(this@MainActivity, "This is a Simple Calculator", Toast.LENGTH_SHORT).show()
+                })
+            }
         )
 
     }
@@ -351,7 +340,7 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
         } else  {
 
             val frgA = supportFragmentManager.findFragmentByTag(fragmentOneTag)
-            if(frgA != null) {
+            if (frgA != null) {
                 isNavBtnVisible = false
                 (frgA as FragmentOne).addActionsIntoAdapter()
                 frgA.arguments = null
@@ -365,12 +354,14 @@ class MainActivity : AppCompatActivity(), FragmentOne.Action,
         val frgB = supportFragmentManager.findFragmentByTag(frgBTag)
         val frgA = supportFragmentManager.findFragmentByTag(fragmentOneTag)
 
-        if(frgA?.arguments == null) isNavBtnVisible = false
+        if (frgA?.arguments == null) isNavBtnVisible = false
+
         if (isFrgBVisible) {
-//            supportFragmentManager.beginTransaction().hide(fragmentTwo).show(fragmentOne).commit()
+
             (frgB as FragmentTwo).resetInputs()
             isFrgBVisible = false
             frgB.arguments = null
+
         } else super.onBackPressed()
     }
 }
